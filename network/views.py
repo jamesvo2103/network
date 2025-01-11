@@ -6,16 +6,22 @@ from django.shortcuts import render
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 from .models import User
-import json
+from django.core.paginator import Paginator
 
-from .models import User, Post
+from .models import User, Post, Follow
 
 def index(request):
         # Authenticated users view their inbox
     if request.user.is_authenticated:
         allPosts = Post.objects.order_by('-date').all()
+
+        paginator = Paginator(allPosts, 10)
+        page_number = request.GET.get('page')
+        posts_of_the_page = paginator.get_page(page_number)
+
         return render(request, "network/index.html", {
-        "allPosts": allPosts
+        "allPosts": allPosts,
+        "posts_of_the_page": posts_of_the_page
         })
 
     # Everyone else is prompted to sign in
@@ -33,27 +39,55 @@ def newPost(request):
     return HttpResponseRedirect(reverse(index))
 
 
-@login_required
-def load_newsfeed(request, filter_type):
-    # Filter posts based on filter type
-    if filter_type == "all":
-        posts = Post.objects.all()
-    elif filter_type == "user":
-        posts = Post.objects.filter(user=request.user)
-    else:
-        return JsonResponse({"error": "Invalid filter type."}, status=400)
+def profile(request, user_id):
+    user = User.objects.get(pk=request.user.id)
+    allPosts = Post.objects.filter(user=user).order_by("id").reverse()
 
-    # Return posts in reverse chronological order
-    posts = posts.order_by("-date").all()
-    return JsonResponse([post.serialize() for post in posts], safe=False)
-@login_required
-def post_detail(request, post_id):
+    following = Follow.objects.filter(user=user)
+    followers = Follow.objects.filter(user_follower=user)
+
     try:
-        post = Post.objects.get(pk=post_id)
-    except Post.DoesNotExist:
-        return JsonResponse({"error": "Post not found."}, status=404)
+        checkFollow = followers.filter(user=User.objects.get(pk=request.user.id))
+        if len(checkFollow) != 0:
+            isFollowing = True
+        else:
+            isFollowing = False
+    except:
+        isFollowing = False
 
-    return JsonResponse(post.serialize())
+    paginator = Paginator(allPosts, 10)
+    page_number = request.GET.get('page')
+    posts_of_the_page = paginator.get_page(page_number)
+
+    return render(request, "network/profile.html", {
+        "allPosts": allPosts,
+        "posts_of_the_page": posts_of_the_page,
+        "username":user.username,
+        "following":following,
+        "followers":followers,
+        "isFollowing": isFollowing,
+        "user_profile": user
+        })
+
+def follow(request):
+    userfollow = request.POST('userfollow')
+    currentUser = User.objects.get(pk=request.user.id)
+    userfollowData = User.objects.get(username=userfollow)
+    f = Follow.objects.get(user=currentUser, user_follower=userfollowData)
+    f.save()
+    user_id = userfollowData.id
+    return HttpResponseRedirect(reverse(profile, kwargs={'user_id':user_id}))
+
+def unfollow(request):
+    userfollow = request.POST('userfollow')
+    currentUser = User.objects.get(pk=request.user.id)
+    userfollowData = User.objects.get(username=userfollow)
+    f = Follow.objects.get(user=currentUser, user_follower=userfollowData)
+    f.delete()
+    user_id = userfollowData.id
+    return HttpResponseRedirect(reverse(profile, kwargs={'user_id':user_id}))
+
+
 def login_view(request):
     if request.method == "POST":
 
