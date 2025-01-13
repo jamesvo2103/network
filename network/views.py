@@ -40,14 +40,14 @@ def newPost(request):
 
 
 def profile(request, user_id):
-    user = User.objects.get(pk=request.user.id)
+    user = User.objects.get(pk=user_id)
     allPosts = Post.objects.filter(user=user).order_by("id").reverse()
 
     following = Follow.objects.filter(user=user)
     followers = Follow.objects.filter(user_follower=user)
 
     try:
-        checkFollow = followers.filter(user=User.objects.get(pk=request.user.id))
+        checkFollow = followers.filter(user=User.objects.get(pk=request.user_id))
         if len(checkFollow) != 0:
             isFollowing = True
         else:
@@ -70,23 +70,41 @@ def profile(request, user_id):
         })
 
 def follow(request):
-    userfollow = request.POST('userfollow')
+    userfollow = request.POST['userfollow']
     currentUser = User.objects.get(pk=request.user.id)
     userfollowData = User.objects.get(username=userfollow)
-    f = Follow.objects.get(user=currentUser, user_follower=userfollowData)
+    f = Follow(user=currentUser, user_follower=userfollowData)
     f.save()
     user_id = userfollowData.id
     return HttpResponseRedirect(reverse(profile, kwargs={'user_id':user_id}))
 
 def unfollow(request):
-    userfollow = request.POST('userfollow')
+    userfollow = request.POST['userfollow']
     currentUser = User.objects.get(pk=request.user.id)
     userfollowData = User.objects.get(username=userfollow)
-    f = Follow.objects.get(user=currentUser, user_follower=userfollowData)
+    f = Follow(user=currentUser, user_follower=userfollowData)
     f.delete()
     user_id = userfollowData.id
     return HttpResponseRedirect(reverse(profile, kwargs={'user_id':user_id}))
 
+def following(request):
+    currentUser = User.objects.get(pk=request.user.id)
+    followingPeople = Follow.objects.filter(user=currentUser)
+    allPosts = Post.objects.all().order_by("id").reverse()
+    followingPosts = []
+
+    for post in  allPosts:
+        for person in followingPeople:
+            if person.user_follower == post.user:
+                followingPosts.append(post)
+    paginator = Paginator(followingPosts, 10)
+    page_number = request.GET.get('page')
+    posts_of_the_page = paginator.get_page(page_number)
+
+    return render(request, "network/following.html", {
+        
+        "posts_of_the_page": posts_of_the_page,
+    })
 
 def login_view(request):
     if request.method == "POST":

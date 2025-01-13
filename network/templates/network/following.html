@@ -2,19 +2,13 @@
 
 
 {% block body %}
-    <div id="new-post" class="my-3 mx-5">
-        <h2>New Post</h2>
-        <form action="{% url 'newPost' %}" method="POST">
-            {% csrf_token %}
-            <textarea class="form-control" id="compose-body" name="content" placeholder="What's on your mind?"></textarea>
-            <input type="submit" class="btn btn-primary mt-2"/>
-        </form>
-    </div>
-
+    
+    <h2>Following</h2>
+        
     <div class ="all-posts">
         {% for post in posts_of_the_page %}
             <div class ="row post mx-5">
-                <h5 class="username"><a href="{% url 'profile' user_id=post.user.id%}">@{{ post.user }}</a></h5>
+                <h5 class="username"><a href="{% url 'profile' user_id=post.user.id%}">@{{ post.user}}</a></h5>
                 <h6 class="content">{{ post.content }}</h6>
                 <p class="date">{{ post.date }}</p>
             </div>
