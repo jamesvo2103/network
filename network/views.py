@@ -8,7 +8,7 @@ from django.views.decorators.csrf import csrf_exempt
 from .models import User
 from django.core.paginator import Paginator
 
-from .models import User, Post, Follow
+from .models import User, Post, Follow, Like
 
 def index(request):
         # Authenticated users view their inbox
@@ -66,7 +66,8 @@ def profile(request, user_id):
         "following":following,
         "followers":followers,
         "isFollowing": isFollowing,
-        "user_profile": user
+        "user_profile": user,
+        "user_like": user
         })
 
 def follow(request):
@@ -105,6 +106,31 @@ def following(request):
         
         "posts_of_the_page": posts_of_the_page,
     })
+
+def like(request):
+    post_id = request.POST['post_id']
+    currentUser = User.objects.get(pk=request.user.id)
+    post = Post.objects.get(pk=post_id)
+    
+    # Initialize the liked list with users who have already liked the post
+    liked = list(post.likes.all())
+    
+    if currentUser in liked:
+        liked.remove(currentUser)
+        message = "Post unliked."
+    else:
+        liked.append(currentUser)
+        message = "Post liked."
+    
+    # Update the likes field of the post
+    post.likes.set(liked)
+    post.save()
+    
+    likes_count = len(liked)
+    
+    return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
+
+
 
 def login_view(request):
     if request.method == "POST":

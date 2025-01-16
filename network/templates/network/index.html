@@ -17,6 +17,18 @@
                 <h5 class="username"><a href="{% url 'profile' user_id=post.user.id%}">@{{ post.user }}</a></h5>
                 <h6 class="content">{{ post.content }}</h6>
                 <p class="date">{{ post.date }}</p>
+                <form action="{% url 'like' %}" method="POST">
+                    {% csrf_token %}
+                    <input type="hidden" name="post_id" value="{{ post.id }}">
+                    <button type="submit" class="heart-button">
+                        {% if user in post.likes.all %}
+                            <i class="fas fa-heart"></i>
+                        {% else %}
+                            <i class="far fa-heart"></i>
+                        {% endif %}
+                        <span class="like-count">{{ post.likes.count }}</span>
+                    </button>
+                </form>
             </div>
         {% endfor %}
     </div>

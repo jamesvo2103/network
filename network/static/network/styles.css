@@ -13,4 +13,17 @@
     margin: 5px 20px;
     box-sizing: border-box;
 }
-
+.heart-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 24px;
+  color: #ff0000;
+}
+.heart-button .fa-heart {
+  color: #ff0000;
+}
+.heart-button .fa-heart-o {
+  color: #ff0000;
+}
+  
