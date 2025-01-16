@@ -8,7 +8,7 @@ from django.views.decorators.csrf import csrf_exempt
 from .models import User
 from django.core.paginator import Paginator
 
-from .models import User, Post, Follow, Like
+from .models import User, Post, Follow, Like, Comment
 
 def index(request):
         # Authenticated users view their inbox
@@ -130,7 +130,18 @@ def like(request):
     
     return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
 
-
+def comment(request):
+    if request.method == 'POST':
+        post_id = request.POST['post_id']
+        comment_text = request.POST['comment_text']
+        currentUser = User.objects.get(pk=request.user.id)
+        post = Post.objects.get(pk=post_id)
+        
+        # Create and save the comment
+        comment = Comment(user=currentUser, post=post, text=comment_text)
+        comment.save()
+        
+        return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
 
 def login_view(request):
     if request.method == "POST":

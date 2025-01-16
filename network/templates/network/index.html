@@ -29,6 +29,75 @@
                         <span class="like-count">{{ post.likes.count }}</span>
                     </button>
                 </form>
+                <form id="comment-form" method="POST" action="{% url 'comment' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="post_id" value="{{ post.id }}">
+                    <button type="button" class="comment-button" id="comment-button">
+                        <i class="far fa-comment"></i>
+                        <span class="comment-count">{{ post.comments.count }}</span>
+                    </button>
+                </form>
+            
+                <div id="comment-popup-container"></div>
+            
+                <script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                        document.querySelector('#comment-button').addEventListener('click', compose_comment);
+                    });
+            
+                    function compose_comment() {
+                        // Create a pop-up text box for the comment
+                        let commentBox = document.createElement('div');
+                        commentBox.innerHTML = `
+                            <div class="comment-popup">
+                                <textarea id="comment-text" placeholder="Write your comment here..."></textarea>
+                                <button id="save-comment" class="btn btn-primary">Save</button>
+                                <button id="cancel-comment" class="btn btn-secondary">Cancel</button>
+                            </div>
+                        `;
+                        document.querySelector('#comment-popup-container').appendChild(commentBox);
+            
+                        // Add event listeners for save and cancel buttons
+                        document.querySelector('#save-comment').addEventListener('click', save_comment);
+                        document.querySelector('#cancel-comment').addEventListener('click', function() {
+                            document.querySelector('#comment-popup-container').removeChild(commentBox);
+                        });
+                    }
+            
+                    function save_comment() {
+                        let commentText = document.querySelector('#comment-text').value;
+                        if (commentText.trim() === '') {
+                            alert('Comment cannot be empty.');
+                            return;
+                        }
+            
+                        // Create a form to submit the comment
+                        let form = document.createElement('form');
+                        form.method = 'POST';
+                        form.action = "{% url 'comment' %}";
+            
+                        let postIdInput = document.createElement('input');
+                        postIdInput.type = 'hidden';
+                        postIdInput.name = 'post_id';
+                        postIdInput.value = "{{ post.id }}";
+                        form.appendChild(postIdInput);
+            
+                        let commentTextInput = document.createElement('input');
+                        commentTextInput.type = 'hidden';
+                        commentTextInput.name = 'comment_text';
+                        commentTextInput.value = commentText;
+                        form.appendChild(commentTextInput);
+            
+                        let csrfTokenInput = document.createElement('input');
+                        csrfTokenInput.type = 'hidden';
+                        csrfTokenInput.name = 'csrfmiddlewaretoken';
+                        csrfTokenInput.value = "{{ csrf_token }}";
+                        form.appendChild(csrfTokenInput);
+            
+                        document.body.appendChild(form);
+                        form.submit();
+                    }
+                </script>
             </div>
         {% endfor %}
     </div>
