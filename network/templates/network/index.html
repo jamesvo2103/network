@@ -1,5 +1,5 @@
 {% extends "network/layout.html" %}
-
+{% load static %}
 
 {% block body %}
     <div id="new-post" class="my-3 mx-5">
@@ -11,10 +11,10 @@
         </form>
     </div>
 
-    <div class ="all-posts">
+    <div class="all-posts">
         {% for post in posts_of_the_page %}
-            <div class ="row post mx-5">
-                <h5 class="username"><a href="{% url 'profile' user_id=post.user.id%}">@{{ post.user }}</a></h5>
+            <div class="row post mx-5" id="post-{{ post.id }}">
+                <h5 class="username"><a href="{% url 'profile' user_id=post.user.id %}">@{{ post.user }}</a></h5>
                 <h6 class="content">{{ post.content }}</h6>
                 <p class="date">{{ post.date }}</p>
                 <form action="{% url 'like' %}" method="POST">
@@ -29,78 +29,30 @@
                         <span class="like-count">{{ post.likes.count }}</span>
                     </button>
                 </form>
-                <form id="comment-form" method="POST" action="{% url 'comment' %}">
+                <form id="comment-form-{{ post.id }}" method="POST" action="{% url 'comment' %}">
                     {% csrf_token %}
                     <input type="hidden" name="post_id" value="{{ post.id }}">
-                    <button type="button" class="comment-button" id="comment-button">
+                    <button type="button" class="comment-button" data-url="{% url 'comment' %}" data-post-id="{{ post.id }}">
                         <i class="far fa-comment"></i>
                         <span class="comment-count">{{ post.comments.count }}</span>
                     </button>
                 </form>
             
-                <div id="comment-popup-container"></div>
-            
-                <script>
-                    document.addEventListener('DOMContentLoaded', function() {
-                        document.querySelector('#comment-button').addEventListener('click', compose_comment);
-                    });
-            
-                    function compose_comment() {
-                        // Create a pop-up text box for the comment
-                        let commentBox = document.createElement('div');
-                        commentBox.innerHTML = `
-                            <div class="comment-popup">
-                                <textarea id="comment-text" placeholder="Write your comment here..."></textarea>
-                                <button id="save-comment" class="btn btn-primary">Save</button>
-                                <button id="cancel-comment" class="btn btn-secondary">Cancel</button>
-                            </div>
-                        `;
-                        document.querySelector('#comment-popup-container').appendChild(commentBox);
-            
-                        // Add event listeners for save and cancel buttons
-                        document.querySelector('#save-comment').addEventListener('click', save_comment);
-                        document.querySelector('#cancel-comment').addEventListener('click', function() {
-                            document.querySelector('#comment-popup-container').removeChild(commentBox);
-                        });
-                    }
-            
-                    function save_comment() {
-                        let commentText = document.querySelector('#comment-text').value;
-                        if (commentText.trim() === '') {
-                            alert('Comment cannot be empty.');
-                            return;
-                        }
-            
-                        // Create a form to submit the comment
-                        let form = document.createElement('form');
-                        form.method = 'POST';
-                        form.action = "{% url 'comment' %}";
-            
-                        let postIdInput = document.createElement('input');
-                        postIdInput.type = 'hidden';
-                        postIdInput.name = 'post_id';
-                        postIdInput.value = "{{ post.id }}";
-                        form.appendChild(postIdInput);
-            
-                        let commentTextInput = document.createElement('input');
-                        commentTextInput.type = 'hidden';
-                        commentTextInput.name = 'comment_text';
-                        commentTextInput.value = commentText;
-                        form.appendChild(commentTextInput);
-            
-                        let csrfTokenInput = document.createElement('input');
-                        csrfTokenInput.type = 'hidden';
-                        csrfTokenInput.name = 'csrfmiddlewaretoken';
-                        csrfTokenInput.value = "{{ csrf_token }}";
-                        form.appendChild(csrfTokenInput);
-            
-                        document.body.appendChild(form);
-                        form.submit();
-                    }
-                </script>
+                <div id="comment-popup-container-{{ post.id }}"></div>
+    
+                <!-- Comments section -->
+                <div class="comments">
+                    {% for comment in post.comments.all %}
+                        <div class="comment">
+                            <p><strong>{{ comment.user.username }}:</strong> {{ comment.text }}</p>
+                        </div>
+                    {% endfor %}
+                </div>
             </div>
+            <script src="{% static 'network/index.js' %}"></script>
         {% endfor %}
     </div>
+    
 
     <nav aria-label="Page navigation example">
         <ul class="pagination d-flex justify-content-center">
